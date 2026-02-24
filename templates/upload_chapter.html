@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Chapter</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+</head>
+<body>
+<div class="page">
+    <h2>Upload Chapter{% if series %}: {{ series.title }}{% endif %}</h2>
+
+    <div class="card">
+        <form method="POST" enctype="multipart/form-data">
+            <label>Chapter Number:</label>
+            <input type="number" name="chapter_number" required>
+
+            <label>Select Chapter Folder:</label>
+            <input type="file" name="images[]" webkitdirectory directory multiple required>
+            <p class="muted">Choose the folder that contains all page images.</p>
+
+            <div class="actions">
+                <button class="btn" type="submit">Upload Chapter</button>
+                <a class="btn secondary" href="{{ url_for('admin_panel') }}">Back to Library</a>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ series.title }} - Chapter {{ chapter_number }}</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/reader.css') }}">
+
+</head>
+<body>
+
+<div class="reader-bg reader-bg-a"></div>
+<div class="reader-bg reader-bg-b"></div>
+
+<nav class="reader-menu" aria-label="Reader menu">
+  <button class="menu-collapse-toggle" type="button" aria-label="Toggle menu" aria-expanded="false">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="menu-toggle-icon" viewBox="0 0 16 16" aria-hidden="true">
+      <line x1="3" y1="4" x2="13" y2="4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></line>
+      <line x1="3" y1="8" x2="13" y2="8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></line>
+      <line x1="3" y1="12" x2="13" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></line>
+    </svg>
+  </button>
+  <div class="menu-primary">
+    <a class="menu-link" href="{{ url_for('index') }}">Home</a>
+    <div class="menu-chapter">
+      <details class="chapter-dropdown">
+        <summary>{{ chapter_number }}</summary>
+        <div class="chapter-list">
+          <div class="chapter-list-title">Chapter</div>
+          {% for ch in available_chapters %}
+            <a
+              class="chapter-item {% if ch == chapter_number %}is-current{% endif %}"
+              href="{{ url_for('read_chapter', slug=slug, chapter_number=ch) }}"
+            >
+              {{ ch }}
+            </a>
+          {% endfor %}
+        </div>
+      </details>
+    </div>
+  </div>
+</nav>
+
+<h2 class="chapter-title">Chapter {{ chapter_number }}</h2>
+
+
+<div class="reader-wrapper">
+    {% for img in images %}
+        <img class="reader-page" src="{{ img }}" alt="page" loading="lazy">
+    {% endfor %}
+</div>
+
+<script>
+  (function () {
+    const pages = Array.from(document.querySelectorAll(".reader-page"));
+    const bgA = document.querySelector(".reader-bg-a");
+    const bgB = document.querySelector(".reader-bg-b");
+    const readerMenu = document.querySelector(".reader-menu");
+    if (!pages.length || !bgA || !bgB) return;
+    const menuToggle = readerMenu ? readerMenu.querySelector(".menu-collapse-toggle") : null;
+    const chapterDropdown = readerMenu ? readerMenu.querySelector(".chapter-dropdown") : null;
+    const AUTO_COLLAPSE_MS = 2500;
+
+    let activeBg = bgA;
+    let idleBg = bgB;
+    const sourceCache = new Set();
+    let autoCollapseTimer = null;
+
+    const clearAutoCollapse = () => {
+      if (autoCollapseTimer) {
+        window.clearTimeout(autoCollapseTimer);
+        autoCollapseTimer = null;
+      }
+    };
+
+    const collapseMenu = () => {
+      if (!readerMenu) return;
+      readerMenu.classList.remove("is-expanded");
+      if (menuToggle) menuToggle.setAttribute("aria-expanded", "false");
+      if (chapterDropdown) chapterDropdown.removeAttribute("open");
+      clearAutoCollapse();
+    };
+
+    const scheduleAutoCollapse = () => {
+      if (!readerMenu) return;
+      const shouldAutoCollapse = readerMenu.classList.contains("is-minimized") && readerMenu.classList.contains("is-expanded");
+      if (!shouldAutoCollapse) {
+        clearAutoCollapse();
+        return;
+      }
+      clearAutoCollapse();
+      autoCollapseTimer = window.setTimeout(() => {
+        collapseMenu();
+      }, AUTO_COLLAPSE_MS);
+    };
+
+    const warmImageCache = () => {
+      for (const page of pages) {
+        const src = page.currentSrc || page.src;
+        if (!src || sourceCache.has(src)) continue;
+        sourceCache.add(src);
+        const img = new Image();
+        img.decoding = "async";
+        img.src = src;
+      }
+    };
+
+    const setBackgroundFromImage = (img) => {
+      const src = img.currentSrc || img.src;
+      if (!src || activeBg.dataset.src === src) return;
+
+      const preload = new Image();
+      const applyBackground = () => {
+        idleBg.style.backgroundImage = `url("${src}")`;
+        idleBg.dataset.src = src;
+        idleBg.classList.add("is-visible");
+        activeBg.classList.remove("is-visible");
+        [activeBg, idleBg] = [idleBg, activeBg];
+      };
+      preload.src = src;
+      preload.onload = applyBackground;
+      preload.onerror = applyBackground;
+    };
+
+    const syncVerticalBackground = () => {
+      const y = Math.max(0, window.scrollY || window.pageYOffset || 0);
+      const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+      const progress = Math.min(1, y / maxScroll);
+      const maxShift = window.innerHeight * 1.9;
+      const shift = -progress * maxShift;
+      document.body.style.setProperty("--bg-pos", `${shift.toFixed(2)}px`);
+    };
+
+    const syncMenuState = () => {
+      if (!readerMenu) return;
+      const y = Math.max(0, window.scrollY || window.pageYOffset || 0);
+      const isMinimized = y > 20;
+      readerMenu.classList.toggle("is-minimized", isMinimized);
+      if (!isMinimized) {
+        collapseMenu();
+      }
+    };
+
+    const pickActivePage = () => {
+      const viewportCenter = window.innerHeight * 0.5;
+      let best = null;
+      let bestDistance = Number.POSITIVE_INFINITY;
+
+      for (const img of pages) {
+        const rect = img.getBoundingClientRect();
+        if (rect.bottom < 0 || rect.top > window.innerHeight) continue;
+        const center = rect.top + rect.height * 0.5;
+        const distance = Math.abs(center - viewportCenter);
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          best = img;
+        }
+      }
+
+      if (!best) {
+        for (const img of pages) {
+          const rect = img.getBoundingClientRect();
+          const center = rect.top + rect.height * 0.5;
+          const distance = Math.abs(center - viewportCenter);
+          if (distance < bestDistance) {
+            bestDistance = distance;
+            best = img;
+          }
+        }
+      }
+
+      if (best) setBackgroundFromImage(best);
+    };
+
+    let scrollTick = false;
+    const handleFrame = () => {
+      syncVerticalBackground();
+      syncMenuState();
+      pickActivePage();
+      scrollTick = false;
+    };
+
+    const firstSrc = pages[0].currentSrc || pages[0].src;
+    bgA.style.backgroundImage = `url("${firstSrc}")`;
+    bgA.dataset.src = firstSrc;
+    bgA.classList.add("is-visible");
+
+    warmImageCache();
+
+    window.addEventListener("scroll", () => {
+      if (!scrollTick) {
+        requestAnimationFrame(handleFrame);
+        scrollTick = true;
+      }
+    }, { passive: true });
+    window.addEventListener("resize", handleFrame);
+    if (menuToggle && readerMenu) {
+      menuToggle.addEventListener("click", () => {
+        const expanded = readerMenu.classList.toggle("is-expanded");
+        menuToggle.setAttribute("aria-expanded", expanded ? "true" : "false");
+        scheduleAutoCollapse();
+      });
+      readerMenu.addEventListener("pointerdown", scheduleAutoCollapse);
+      readerMenu.addEventListener("focusin", scheduleAutoCollapse);
+      readerMenu.addEventListener("keydown", scheduleAutoCollapse);
+      readerMenu.addEventListener("mouseenter", clearAutoCollapse);
+      readerMenu.addEventListener("mouseleave", scheduleAutoCollapse);
+      document.addEventListener("pointerdown", (event) => {
+        if (!readerMenu.classList.contains("is-minimized") || !readerMenu.classList.contains("is-expanded")) return;
+        if (readerMenu.contains(event.target)) return;
+        collapseMenu();
+      });
+      window.addEventListener("blur", collapseMenu);
+    }
+    handleFrame();
+  })();
+</script>
+
+</body>
+</html>

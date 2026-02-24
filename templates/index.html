@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WREAD</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+</head>
+<body class="home-glass with-left-menu">
+<button class="menu-toggle-chip" type="button" aria-label="Toggle side menu" aria-expanded="false">
+    <svg class="menu-chip-icon" viewBox="0 0 16 16" aria-hidden="true">
+        <line x1="3" y1="4" x2="13" y2="4"></line>
+        <line x1="3" y1="8" x2="11.5" y2="8"></line>
+        <line x1="3" y1="12" x2="10" y2="12"></line>
+    </svg>
+</button>
+<div class="menu-overlay" aria-hidden="true"></div>
+<nav class="left-vertical-menu" aria-label="Main side menu">
+    <div class="menu-links menu-links-top">
+        <a class="menu-icon-link" href="{{ url_for('index') }}" title="Home" aria-label="Home">
+            <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 9.5L12 3l9 6.5"></path>
+                <path d="M5 10v11h14V10"></path>
+                <path d="M9 21v-6h6v6"></path>
+            </svg>
+            <span class="sr-only">Home</span>
+        </a>
+        <a class="menu-icon-link" href="{{ url_for('admin_access') }}" title="Admin Access" aria-label="Admin Access">
+            <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path>
+                <path d="M14 3v5h5"></path>
+            </svg>
+            {% if is_admin %}<span class="menu-icon-badge">1</span>{% endif %}
+            <span class="sr-only">Admin Access</span>
+        </a>
+        {% if is_user_logged_in %}
+            <a class="menu-icon-link" href="{{ url_for('user_logout') }}" title="User Logout" aria-label="User Logout">
+                <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M10 17l5-5-5-5"></path>
+                    <path d="M15 12H3"></path>
+                    <path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"></path>
+                </svg>
+                <span class="sr-only">User Logout</span>
+            </a>
+        {% else %}
+            <a class="menu-icon-link" href="{{ url_for('user_login') }}" title="User Login" aria-label="User Login">
+                <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M14 7l5 5-5 5"></path>
+                    <path d="M19 12H7"></path>
+                    <path d="M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5"></path>
+                </svg>
+                <span class="sr-only">User Login</span>
+            </a>
+        {% endif %}
+    </div>
+    <div class="menu-links menu-links-bottom">
+        <a class="menu-icon-link" href="{{ url_for('user_profile') }}" title="User Profile" aria-label="User Profile">
+            <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="8" r="4"></circle>
+                <path d="M4 21a8 8 0 0 1 16 0"></path>
+            </svg>
+            <span class="sr-only">User Profile</span>
+        </a>
+        {% if is_admin %}
+            <a class="menu-icon-link" href="{{ url_for('admin_panel') }}" title="Admin Panel" aria-label="Admin Panel">
+                <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6 1.65 1.65 0 0 0-.33 1v.2a2 2 0 1 1-4 0V21a1.65 1.65 0 0 0-.33-1 1.65 1.65 0 0 0-1-.6 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-.6-1 1.65 1.65 0 0 0-1-.33h-.2a2 2 0 1 1 0-4H3a1.65 1.65 0 0 0 1-.33 1.65 1.65 0 0 0 .6-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6c.39 0 .77-.14 1-.4.26-.26.4-.62.4-1V3a2 2 0 1 1 4 0v.2c0 .38.14.74.4 1 .26.26.62.4 1 .4.46 0 .9-.18 1.24-.5l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06c-.32.34-.5.78-.5 1.24 0 .39.14.77.4 1 .26.26.62.4 1 .4h.2a2 2 0 1 1 0 4H21c-.38 0-.74.14-1 .4-.26.23-.4.61-.4 1z"></path>
+                </svg>
+                <span class="sr-only">Admin Panel</span>
+            </a>
+        {% endif %}
+    </div>
+</nav>
+<div class="page home-layout">
+    <section class="card home-tile">
+        <h1 class="home-title">WREAD</h1>
+        <p class="muted home-subtitle">Manga and manhwa reader library.</p>
+        <div class="actions home-actions">
+            {% if is_admin %}
+                <a class="btn" href="{{ url_for('admin_panel') }}">Admin Page</a>
+                <a class="btn secondary" href="{{ url_for('admin_logout') }}">Lock Admin</a>
+            {% else %}
+                <a class="btn" href="{{ url_for('admin_access') }}">Admin Access</a>
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="card series-block">
+        <h2 class="series-heading">Series</h2>
+        {% if series %}
+            <div class="stack series-grid">
+                {% for s in series %}
+                    <div class="card series-tile">
+                        {% if s.cover_path %}
+                            <img class="series-cover" src="{{ url_for('static', filename=s.cover_path) }}" alt="{{ s.title }} cover">
+                        {% else %}
+                            <div class="series-cover-placeholder">No Cover</div>
+                        {% endif %}
+                        <h3>{{ s.title }}</h3>
+                        {% if s.genre %}
+                            <p><strong>Genre:</strong> {{ s.genre }}</p>
+                        {% endif %}
+                        {% if s.description %}
+                            <p class="muted">{{ s.description }}</p>
+                        {% endif %}
+
+                        <div class="actions">
+                            <a class="btn" href="{{ url_for('read_chapter', slug=s.slug, chapter_number=1) }}">Read</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="card series-empty">
+                <p class="muted">No series added yet.</p>
+            </div>
+        {% endif %}
+    </section>
+</div>
+<script>
+  (function () {
+    const body = document.body;
+    const toggle = document.querySelector(".menu-toggle-chip");
+    const overlay = document.querySelector(".menu-overlay");
+    const menu = document.querySelector(".left-vertical-menu");
+    if (!toggle || !menu || !overlay) return;
+
+    const AUTO_HIDE_MS = 70000;
+    let hideTimer = null;
+
+    const clearHideTimer = () => {
+      if (hideTimer) {
+        window.clearTimeout(hideTimer);
+        hideTimer = null;
+      }
+    };
+
+    const collapseMenu = () => {
+      body.classList.remove("menu-open");
+      toggle.setAttribute("aria-expanded", "false");
+      clearHideTimer();
+    };
+
+    const scheduleHide = () => {
+      clearHideTimer();
+      if (!body.classList.contains("menu-open")) return;
+      hideTimer = window.setTimeout(() => {
+        collapseMenu();
+      }, AUTO_HIDE_MS);
+    };
+
+    const openMenu = () => {
+      body.classList.add("menu-open");
+      toggle.setAttribute("aria-expanded", "true");
+      scheduleHide();
+    };
+
+    toggle.addEventListener("click", () => {
+      if (body.classList.contains("menu-open")) {
+        collapseMenu();
+      } else {
+        openMenu();
+      }
+    });
+
+    menu.addEventListener("pointerdown", scheduleHide);
+    menu.addEventListener("focusin", scheduleHide);
+    menu.addEventListener("keydown", scheduleHide);
+    menu.addEventListener("mouseenter", clearHideTimer);
+    menu.addEventListener("mouseleave", scheduleHide);
+
+    menu.querySelectorAll("a").forEach((link) => {
+      link.addEventListener("click", () => {
+        window.setTimeout(collapseMenu, 120);
+      });
+    });
+
+    document.addEventListener("pointerdown", (event) => {
+      if (!body.classList.contains("menu-open")) return;
+      if (menu.contains(event.target) || toggle.contains(event.target)) return;
+      collapseMenu();
+    });
+    overlay.addEventListener("pointerdown", collapseMenu);
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") collapseMenu();
+    });
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+</head>
+<body class="home-glass">
+<div class="page">
+    <section class="card">
+        <h2>User Profile</h2>
+        <p><strong>Username:</strong> {{ user.username }}</p>
+        <p><strong>Role:</strong> {{ user.role }}</p>
+        <p><strong>Bookmarks:</strong> {{ bookmark_count }}</p>
+
+        <div class="actions">
+            <a class="btn secondary" href="{{ url_for('index') }}">Back to Home</a>
+            <a class="btn danger" href="{{ url_for('user_logout') }}">Logout</a>
+        </div>
+    </section>
+</div>
+</body>
+</html>

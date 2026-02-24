@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+</head>
+<body>
+<div class="page">
+    <h2>User Login</h2>
+
+    <div class="card">
+        {% if error %}
+            <p class="alert error">{{ error }}</p>
+        {% endif %}
+
+        <form method="POST">
+            <input type="hidden" name="next" value="{{ next_path }}">
+
+            <label>Username:</label>
+            <input type="text" name="username" required>
+
+            <label>Password:</label>
+            <input type="password" name="password" required>
+
+            <div class="actions">
+                <button class="btn" type="submit">Login</button>
+                <a class="btn secondary" href="{{ url_for('index') }}">Back to Home</a>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

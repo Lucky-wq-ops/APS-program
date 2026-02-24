@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+</head>
+<body class="home-glass">
+<div class="page home-layout">
+    <section class="card home-tile">
+        <h2 class="home-title">Admin Panel</h2>
+        <p class="muted home-subtitle">Manage series and chapter uploads.</p>
+        <div class="actions">
+            <a class="btn" href="{{ url_for('add_series') }}">Add Series</a>
+            <a class="btn secondary" href="{{ url_for('index') }}">Back to Home</a>
+            <a class="btn secondary" href="{{ url_for('admin_logout') }}">Lock Admin</a>
+        </div>
+    </section>
+
+    {% if notice %}
+        <section class="card">
+            <p class="alert success">{{ notice }}</p>
+        </section>
+    {% endif %}
+    {% if error %}
+        <section class="card">
+            <p class="alert error">{{ error }}</p>
+        </section>
+    {% endif %}
+
+    <section class="card series-block">
+        <h3 class="series-heading">Chapter Management</h3>
+        {% if series %}
+            <div class="stack series-grid">
+                {% for s in series %}
+                    <div class="card series-tile">
+                        {% if s.cover_path %}
+                            <img class="series-cover" src="{{ url_for('static', filename=s.cover_path) }}" alt="{{ s.title }} cover">
+                        {% else %}
+                            <div class="series-cover-placeholder">No Cover</div>
+                        {% endif %}
+                        <p><strong>{{ s.title }}</strong></p>
+                        <form class="cover-form" method="POST" action="{{ url_for('set_cover', slug=s.slug) }}" enctype="multipart/form-data">
+                            <label>Cover Image:</label>
+                            <input type="file" name="cover_image" accept="image/*" required>
+                            <button class="btn secondary" type="submit">Update Cover</button>
+                        </form>
+                        <div class="actions">
+                            <a class="btn secondary" href="{{ url_for('upload_chapter', slug=s.slug) }}">Upload Chapter</a>
+                        </div>
+                        {% set chapters = chapter_map.get(s.slug, []) %}
+                        {% if chapters %}
+                            <div class="chapter-actions">
+                                {% for ch in chapters %}
+                                    <form method="POST" action="{{ url_for('delete_chapter', slug=s.slug, chapter_number=ch) }}" onsubmit="return confirm('Delete chapter {{ ch }} from {{ s.title }}? This cannot be undone.');">
+                                        <button class="btn danger" type="submit">Delete Ch {{ ch }}</button>
+                                    </form>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="muted">No chapters yet.</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="card series-empty">
+                <p class="muted">No series found. Add a series first.</p>
+            </div>
+        {% endif %}
+    </section>
+</div>
+</body>
+</html>

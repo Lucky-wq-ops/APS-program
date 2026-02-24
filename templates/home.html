@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Library</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+</head>
+<body>
+<div class="page">
+    <h1>Manga and Manhwa Library</h1>
+    <div class="actions">
+        <a class="btn" href="{{ url_for('add_series') }}">Add New Series</a>
+    </div>
+
+    <hr>
+
+    {% if series %}
+        <div class="stack">
+            {% for s in series %}
+                <div class="card">
+                    <h3>{{ s[1] }}</h3>
+                    <p><strong>Genre:</strong> {{ s[2] }}</p>
+                    <p class="muted">{{ s[3] }}</p>
+                    <div class="actions">
+                        <a class="btn secondary" href="/admin/upload-chapter/{{ s[0] }}">Upload Chapter</a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="muted">No series added yet.</p>
+    {% endif %}
+</div>
+</body>
+</html>

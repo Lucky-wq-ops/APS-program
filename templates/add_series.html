@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Series</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+</head>
+<body>
+<div class="page">
+    <h2>Add New Series</h2>
+
+    <div class="card">
+        <form method="POST" enctype="multipart/form-data">
+            <label>Title:</label>
+            <input type="text" name="title" required>
+
+            <label>Slug (URL name):</label>
+            <input type="text" name="slug" placeholder="solo-leveling" required>
+
+            <label>Genre:</label>
+            <input type="text" name="genre">
+
+            <label>Description:</label>
+            <textarea name="description"></textarea>
+
+            <label>Cover Image:</label>
+            <input type="file" name="cover_image" accept="image/*" required>
+
+            <div class="actions">
+                <button class="btn" type="submit">Add Series</button>
+                <a class="btn secondary" href="{{ url_for('admin_panel') }}">Back to Home</a>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>
