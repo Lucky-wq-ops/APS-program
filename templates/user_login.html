@@ -26,9 +26,18 @@
 
             <div class="actions">
                 <button class="btn" type="submit">Login</button>
-                <a class="btn secondary" href="{{ url_for('index') }}">Back to Home</a>
+                <a class="btn secondary icon-btn" href="{{ url_for('index') }}" title="Back to Home" aria-label="Back to Home">
+                    <svg class="home-nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M3 9.5L12 3l9 6.5"></path>
+                        <path d="M5 10v11h14V10"></path>
+                        <path d="M9 21v-6h6v6"></path>
+                    </svg>
+                    <span class="sr-only">Back to Home</span>
+                </a>
             </div>
         </form>
+
+        <p class="muted">No account yet? <a href="{{ url_for('user_register', next=next_path) }}">Create one</a></p>
     </div>
 </div>
 </body>

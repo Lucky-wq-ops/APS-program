@@ -22,7 +22,22 @@
     </svg>
   </button>
   <div class="menu-primary">
-    <a class="menu-link" href="{{ url_for('index') }}">Home</a>
+    <a
+      class="menu-link icon-link menu-link-back"
+      href="{{ url_for('series_detail', slug=slug) }}"
+      title="Back to Series"
+      aria-label="Back to Series"
+    >
+      <span class="menu-link-icon" style="--icon-url: url('{{ url_for('icon_asset', filename='chevron-double-left.svg') }}');" aria-hidden="true"></span>
+    </a>
+    <a
+      class="menu-link icon-link menu-link-home"
+      href="{{ url_for('index') }}"
+      title="Home"
+      aria-label="Home"
+    >
+      <span class="menu-link-icon" style="--icon-url: url('{{ url_for('icon_asset', filename='house.svg') }}');" aria-hidden="true"></span>
+    </a>
     <div class="menu-chapter">
       <details class="chapter-dropdown">
         <summary>{{ chapter_number }}</summary>

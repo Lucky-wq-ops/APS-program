@@ -12,12 +12,23 @@
 
     <div class="card">
         <form method="POST" enctype="multipart/form-data">
-            <label>Chapter Number:</label>
-            <input type="number" name="chapter_number" required>
+            <label for="chapter_number">Chapter Number:</label>
+            <input id="chapter_number" type="number" name="chapter_number" required>
 
-            <label>Select Chapter Folder:</label>
-            <input type="file" name="images[]" webkitdirectory directory multiple required>
-            <p class="muted">Choose the folder that contains all page images.</p>
+            <label for="chapter_folder">Select Chapter Folder:</label>
+            <input
+                id="chapter_folder"
+                type="file"
+                name="images[]"
+                webkitdirectory
+                mozdirectory
+                directory
+                multiple
+                accept=".jpg,.jpeg,.png,.webp,.gif,.bmp,.avif,image/*"
+                required
+            >
+            <p class="muted">Choose one folder that contains all page images.</p>
+            <p id="folder-file-count" class="muted"></p>
 
             <div class="actions">
                 <button class="btn" type="submit">Upload Chapter</button>
@@ -26,5 +37,17 @@
         </form>
     </div>
 </div>
+<script>
+  (function () {
+    const input = document.getElementById("chapter_folder");
+    const info = document.getElementById("folder-file-count");
+    if (!input || !info) return;
+
+    input.addEventListener("change", () => {
+      const total = input.files ? input.files.length : 0;
+      info.textContent = total ? `${total} image file(s) selected from folder.` : "";
+    });
+  })();
+</script>
 </body>
 </html>

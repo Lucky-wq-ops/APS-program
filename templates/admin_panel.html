@@ -13,7 +13,14 @@
         <p class="muted home-subtitle">Manage series and chapter uploads.</p>
         <div class="actions">
             <a class="btn" href="{{ url_for('add_series') }}">Add Series</a>
-            <a class="btn secondary" href="{{ url_for('index') }}">Back to Home</a>
+            <a class="btn secondary icon-btn" href="{{ url_for('index') }}" title="Back to Home" aria-label="Back to Home">
+                <svg class="home-nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3 9.5L12 3l9 6.5"></path>
+                    <path d="M5 10v11h14V10"></path>
+                    <path d="M9 21v-6h6v6"></path>
+                </svg>
+                <span class="sr-only">Back to Home</span>
+            </a>
             <a class="btn secondary" href="{{ url_for('admin_logout') }}">Lock Admin</a>
         </div>
     </section>
@@ -42,13 +49,64 @@
                         {% endif %}
                         <p><strong>{{ s.title }}</strong></p>
                         <form class="cover-form" method="POST" action="{{ url_for('set_cover', slug=s.slug) }}" enctype="multipart/form-data">
-                            <label>Cover Image:</label>
-                            <input type="file" name="cover_image" accept="image/*" required>
+                            <label for="cover_image_{{ s.slug }}">Cover Image:</label>
+                            <div class="file-picker-row">
+                                <input
+                                    id="cover_image_{{ s.slug }}"
+                                    class="file-input-hidden"
+                                    type="file"
+                                    name="cover_image"
+                                    accept="image/*"
+                                    data-status-target="cover_status_{{ s.slug }}"
+                                    required
+                                >
+                                <label class="btn secondary icon-btn file-picker-btn" for="cover_image_{{ s.slug }}" title="Choose Cover Image" aria-label="Choose Cover Image">
+                                    <span
+                                        class="icon-mask file-picker-icon"
+                                        data-default-icon="{{ url_for('icon_asset', filename='file-earmark.svg') }}"
+                                        data-selected-icon="{{ url_for('icon_asset', filename='file-earmark-check-fill.svg') }}"
+                                        style="--icon-url: url('{{ url_for('icon_asset', filename='file-earmark.svg') }}');"
+                                        aria-hidden="true"
+                                    ></span>
+                                    <span class="sr-only">Choose Cover Image</span>
+                                </label>
+                                <span id="cover_status_{{ s.slug }}" class="file-picker-status muted"></span>
+                            </div>
                             <button class="btn secondary" type="submit">Update Cover</button>
                         </form>
-                        <div class="actions">
-                            <a class="btn secondary" href="{{ url_for('upload_chapter', slug=s.slug) }}">Upload Chapter</a>
-                        </div>
+                        <form class="cover-form" method="POST" action="{{ url_for('upload_chapter', slug=s.slug) }}" enctype="multipart/form-data">
+                            <label for="chapter_number_{{ s.slug }}">Chapter Number:</label>
+                            <input id="chapter_number_{{ s.slug }}" type="number" name="chapter_number" min="1" required>
+                            <label for="chapter_folder_{{ s.slug }}">Chapter Folder:</label>
+                            <div class="file-picker-row">
+                                <input
+                                    id="chapter_folder_{{ s.slug }}"
+                                    class="file-input-hidden"
+                                    type="file"
+                                    name="images[]"
+                                    webkitdirectory
+                                    mozdirectory
+                                    directory
+                                    multiple
+                                    accept=".jpg,.jpeg,.png,.webp,.gif,.bmp,.avif,image/*"
+                                    data-status-target="folder_status_{{ s.slug }}"
+                                    required
+                                >
+                                <label class="btn secondary icon-btn file-picker-btn" for="chapter_folder_{{ s.slug }}" title="Choose Chapter Folder" aria-label="Choose Chapter Folder">
+                                    <span
+                                        class="icon-mask file-picker-icon"
+                                        data-default-icon="{{ url_for('icon_asset', filename='folder.svg') }}"
+                                        data-selected-icon="{{ url_for('icon_asset', filename='folder-check.svg') }}"
+                                        style="--icon-url: url('{{ url_for('icon_asset', filename='folder.svg') }}');"
+                                        aria-hidden="true"
+                                    ></span>
+                                    <span class="sr-only">Choose Chapter Folder</span>
+                                </label>
+                                <span id="folder_status_{{ s.slug }}" class="file-picker-status muted"></span>
+                            </div>
+                            <p class="muted">Choose one folder containing all chapter page images.</p>
+                            <button class="btn secondary" type="submit">Upload Chapter Folder</button>
+                        </form>
                         {% set chapters = chapter_map.get(s.slug, []) %}
                         {% if chapters %}
                             <div class="chapter-actions">
@@ -71,5 +129,32 @@
         {% endif %}
     </section>
 </div>
+<script>
+  (function () {
+    const inputs = document.querySelectorAll(".file-input-hidden");
+    inputs.forEach((input) => {
+      const row = input.closest(".file-picker-row");
+      const icon = row ? row.querySelector(".file-picker-icon") : null;
+      const statusId = input.dataset.statusTarget;
+      const statusEl = statusId ? document.getElementById(statusId) : null;
+
+      const updateState = () => {
+        const count = input.files ? input.files.length : 0;
+        if (icon) {
+          const defaultIcon = icon.dataset.defaultIcon;
+          const selectedIcon = icon.dataset.selectedIcon;
+          const iconUrl = count ? selectedIcon : defaultIcon;
+          if (iconUrl) icon.style.setProperty("--icon-url", `url('${iconUrl}')`);
+        }
+        if (statusEl) {
+          statusEl.textContent = count ? `${count} selected` : "";
+        }
+      };
+
+      input.addEventListener("change", updateState);
+      updateState();
+    });
+  })();
+</script>
 </body>
 </html>

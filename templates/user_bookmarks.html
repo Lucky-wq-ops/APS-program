@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saved Bookmarks</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+</head>
+<body class="home-glass">
+<div class="page home-layout">
+    <section class="card home-tile">
+        <h1 class="home-title">Saved Bookmarks</h1>
+        <p class="muted home-subtitle">Series saved to your account.</p>
+        <div class="actions">
+            <a class="btn secondary icon-btn" href="{{ url_for('index') }}" title="Back to Home" aria-label="Back to Home">
+                <svg class="home-nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3 9.5L12 3l9 6.5"></path>
+                    <path d="M5 10v11h14V10"></path>
+                    <path d="M9 21v-6h6v6"></path>
+                </svg>
+                <span class="sr-only">Back to Home</span>
+            </a>
+            <a class="btn secondary" href="{{ url_for('user_profile') }}">Profile</a>
+        </div>
+    </section>
+
+    <section class="series-block">
+        <h2 class="series-heading">Your List</h2>
+        {% if series %}
+            <div class="stack series-grid">
+                {% for s in series %}
+                    <div class="card series-tile">
+                        {% if s.cover_path %}
+                            <img class="series-cover" src="{{ url_for('static', filename=s.cover_path) }}" alt="{{ s.title }} cover">
+                        {% else %}
+                            <div class="series-cover-placeholder">No Cover</div>
+                        {% endif %}
+                        <h3>{{ s.title }}</h3>
+                        {% if s.genre %}
+                            <p><strong>Genre:</strong> {{ s.genre }}</p>
+                        {% endif %}
+                        {% if s.description %}
+                            <p class="muted">{{ s.description }}</p>
+                        {% endif %}
+
+                        <div class="actions">
+                            <a class="btn" href="{{ url_for('read_chapter', slug=s.slug, chapter_number=1) }}">Read</a>
+                            <form method="POST" action="{{ url_for('toggle_bookmark', slug=s.slug) }}" class="bookmark-toggle-form">
+                                <input type="hidden" name="next" value="{{ request.path }}">
+                                <button class="btn secondary bookmark-btn active" type="submit" aria-label="Remove bookmark for {{ s.title }}">
+                                    <span class="icon-mask" style="--icon-url: url('{{ url_for('icon_asset', filename='bookmark-fill.svg') }}');" aria-hidden="true"></span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="card series-empty">
+                <p class="muted">No saved series yet.</p>
+            </div>
+        {% endif %}
+    </section>
+</div>
+</body>
+</html>

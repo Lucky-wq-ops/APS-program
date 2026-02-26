@@ -79,10 +79,18 @@ body::after {
 
 .menu-primary {
     width: 100%;
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    justify-content: space-between;
     gap: 12px;
+}
+
+.menu-link-back {
+    justify-self: start;
+}
+
+.menu-link-home {
+    justify-self: center;
 }
 
 .reader-menu.is-minimized {
@@ -119,7 +127,8 @@ body::after {
 }
 
 .reader-menu.is-minimized.is-expanded .menu-primary {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
 }
 
 .menu-link {
@@ -132,11 +141,37 @@ body::after {
     transition: opacity 220ms ease, transform 220ms ease, padding 220ms ease, font-size 220ms ease, background-color 220ms ease;
 }
 
+.menu-link.icon-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 36px;
+    padding: 0;
+    flex: 0 0 auto;
+}
+
+.menu-link-icon {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    background-color: currentColor;
+    -webkit-mask-image: var(--icon-url);
+    mask-image: var(--icon-url);
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+}
+
 .menu-chapter {
     display: flex;
     align-items: center;
     gap: 8px;
     position: relative;
+    justify-self: end;
 }
 
 .chapter-dropdown {
@@ -226,6 +261,12 @@ body::after {
     background: rgba(255, 255, 255, 0.12);
 }
 
+.reader-menu.is-minimized .menu-link.icon-link {
+    width: 34px;
+    height: 32px;
+    padding: 0;
+}
+
 .reader-menu.is-minimized .chapter-dropdown summary {
     opacity: 0.96;
     transform: scale(0.98);
@@ -294,6 +335,7 @@ body::after {
     }
 
     .reader-menu.is-minimized.is-expanded .menu-primary {
+        display: flex;
         flex-direction: column;
         align-items: stretch;
     }

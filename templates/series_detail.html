@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WREAD</title>
+    <title>{{ series.title }} - Details</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
 </head>
 <body class="home-glass with-left-menu">
@@ -67,47 +67,54 @@
 </nav>
 <div class="page home-layout">
     <section class="card home-tile">
-        <h1 class="home-title">WREAD</h1>
-        <p class="muted home-subtitle">Manga and manhwa reader library.</p>
+        <h1 class="home-title">{{ series.title }}</h1>
+        <p class="muted home-subtitle">Series details</p>
+        <div class="chapter-control-panel">
+            <div class="chapter-control-row">
+                {% if available_chapters %}
+                    <form class="chapter-select-form" onsubmit="event.preventDefault(); const url = this.chapter_url.value; if (url) window.location.href = url;">
+                        <label class="sr-only" for="chapter_url">Select Chapter</label>
+                        <div class="chapter-select-row">
+                            <select id="chapter_url" name="chapter_url">
+                                {% for ch in available_chapters %}
+                                    <option value="{{ url_for('read_chapter', slug=series.slug, chapter_number=ch) }}">Chapter {{ ch }}</option>
+                                {% endfor %}
+                            </select>
+                            <button class="btn" type="submit">Read Chapter</button>
+                        </div>
+                    </form>
+                {% endif %}
+                {% if is_user_logged_in %}
+                    <form method="POST" action="{{ url_for('toggle_bookmark', slug=series.slug) }}" class="bookmark-toggle-form">
+                        <input type="hidden" name="next" value="{{ request.path }}">
+                        <button class="btn secondary bookmark-btn{% if is_saved %} active{% endif %}" type="submit" aria-label="{{ 'Remove bookmark' if is_saved else 'Save bookmark' }}">
+                            <span class="icon-mask" style="--icon-url: url('{{ url_for('icon_asset', filename='bookmark-fill.svg' if is_saved else 'bookmark.svg') }}');" aria-hidden="true"></span>
+                        </button>
+                    </form>
+                {% else %}
+                    <a class="btn secondary bookmark-btn" href="{{ url_for('user_login', next=request.path) }}" aria-label="Login to save bookmark">
+                        <span class="icon-mask" style="--icon-url: url('{{ url_for('icon_asset', filename='bookmark.svg') }}');" aria-hidden="true"></span>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
     </section>
 
-    <section class="series-block">
-        <h2 class="series-heading">Manhwa</h2>
-        {% if series %}
-            <div class="stack series-grid">
-                {% for s in series %}
-                    <div class="card series-tile">
-                        <a class="series-card-link" href="{{ url_for('series_detail', slug=s.slug) }}" aria-label="View details for {{ s.title }}">
-                            {% if s.cover_path %}
-                                <img class="series-cover" src="{{ url_for('static', filename=s.cover_path) }}" alt="{{ s.title }} cover">
-                            {% else %}
-                                <div class="series-cover-placeholder">No Cover</div>
-                            {% endif %}
-                            <h3 class="series-title">{{ s.title }}</h3>
-                        </a>
-                        {% set is_saved = s.id in bookmarked_series_ids %}
-                        <div class="actions">
-                            {% if is_user_logged_in %}
-                                <form method="POST" action="{{ url_for('toggle_bookmark', slug=s.slug) }}" class="bookmark-toggle-form">
-                                    <input type="hidden" name="next" value="{{ request.path }}">
-                                    <button class="btn secondary bookmark-btn{% if is_saved %} active{% endif %}" type="submit" aria-label="{{ 'Remove bookmark' if is_saved else 'Save bookmark' }}">
-                                        <span class="icon-mask" style="--icon-url: url('{{ url_for('icon_asset', filename='bookmark-fill.svg' if is_saved else 'bookmark.svg') }}');" aria-hidden="true"></span>
-                                    </button>
-                                </form>
-                            {% else %}
-                                <a class="btn secondary bookmark-btn" href="{{ url_for('user_login', next=request.path) }}" aria-label="Login to save bookmark">
-                                    <span class="icon-mask" style="--icon-url: url('{{ url_for('icon_asset', filename='bookmark.svg') }}');" aria-hidden="true"></span>
-                                </a>
-                            {% endif %}
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
+    <section class="card series-detail-card">
+        {% if series.cover_path %}
+            <img class="series-cover" src="{{ url_for('static', filename=series.cover_path) }}" alt="{{ series.title }} cover">
         {% else %}
-            <div class="card series-empty">
-                <p class="muted">No series added yet.</p>
-            </div>
+            <div class="series-cover-placeholder">No Cover</div>
         {% endif %}
+
+        <div class="series-detail-content">
+            {% if series.genre %}
+                <p><strong>Genre:</strong> {{ series.genre }}</p>
+            {% endif %}
+            <p><strong>Chapters:</strong> {{ chapter_count }}</p>
+            <h2>Description</h2>
+            <p class="muted series-detail-description">{{ series.description or "No description available yet." }}</p>
+        </div>
     </section>
 </div>
 <script>

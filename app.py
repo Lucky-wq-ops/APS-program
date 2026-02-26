@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, abort, session
+from flask import Flask, render_template, request, redirect, url_for, abort, session, send_from_directory
 from functools import wraps
 import sqlite3
 import os
@@ -12,6 +12,7 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "change-this-flask-secret")
 DATABASE = "library.db"
 UPLOAD_FOLDER = "static/uploads"
 COVER_FOLDER = "static/covers"
+ICON_FOLDER = "icons"
 ADMIN_ACCESS_KEY = os.environ.get("WREAD_ADMIN_KEY", "change-this-admin-key")
 ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".avif"}
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -44,6 +45,25 @@ def ensure_series_cover_column():
     finally:
         db.close()
 
+def ensure_bookmarks_table():
+    db = get_db()
+    try:
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS bookmarks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                series_id INTEGER NOT NULL,
+                last_chapter INTEGER,
+                FOREIGN KEY (user_id) REFERENCES users(id),
+                FOREIGN KEY (series_id) REFERENCES series(id)
+            )
+        """)
+        db.execute("CREATE INDEX IF NOT EXISTS idx_bookmarks_user_id ON bookmarks(user_id)")
+        db.execute("CREATE INDEX IF NOT EXISTS idx_bookmarks_user_series ON bookmarks(user_id, series_id)")
+        db.commit()
+    finally:
+        db.close()
+
 def _is_safe_next_path(path):
     return bool(path) and path.startswith("/") and not path.startswith("//")
 
@@ -72,14 +92,61 @@ def inject_admin_state():
     }
 
 ensure_series_cover_column()
+ensure_bookmarks_table()
 
 # ---------------- HOME ----------------
 @app.route("/")
 def index():
     db = get_db()
     series = db.execute("SELECT * FROM series").fetchall()
+    bookmarked_series_ids = set()
+    user_id = session.get("user_id")
+    if user_id:
+        bookmark_rows = db.execute(
+            "SELECT series_id FROM bookmarks WHERE user_id = ?",
+            (user_id,)
+        ).fetchall()
+        bookmarked_series_ids = {row["series_id"] for row in bookmark_rows}
     db.close()
-    return render_template("index.html", series=series)
+    return render_template("index.html", series=series, bookmarked_series_ids=bookmarked_series_ids)
+
+@app.route("/series/<slug>")
+def series_detail(slug):
+    db = get_db()
+    series = db.execute(
+        "SELECT id, title, slug, genre, description, cover_path FROM series WHERE slug = ?",
+        (slug,)
+    ).fetchone()
+    if not series:
+        db.close()
+        abort(404)
+
+    chapter_rows = db.execute("""
+        SELECT DISTINCT chapter_number
+        FROM chapters
+        WHERE series_id = ?
+        ORDER BY chapter_number
+    """, (series["id"],)).fetchall()
+    available_chapters = [row["chapter_number"] for row in chapter_rows]
+    first_chapter = available_chapters[0] if available_chapters else None
+
+    is_saved = False
+    user_id = session.get("user_id")
+    if user_id:
+        is_saved = bool(db.execute(
+            "SELECT 1 FROM bookmarks WHERE user_id = ? AND series_id = ? LIMIT 1",
+            (user_id, series["id"])
+        ).fetchone())
+
+    db.close()
+    return render_template(
+        "series_detail.html",
+        series=series,
+        first_chapter=first_chapter,
+        chapter_count=len(available_chapters),
+        available_chapters=available_chapters,
+        is_saved=is_saved
+    )
 
 @app.route("/user/login", methods=["GET", "POST"])
 def user_login():
@@ -106,6 +173,52 @@ def user_login():
         error = "Invalid username or password."
 
     return render_template("user_login.html", error=error, next_path=next_path)
+
+@app.route("/user/register", methods=["GET", "POST"])
+def user_register():
+    error = None
+    next_path = request.args.get("next") or request.form.get("next") or url_for("index")
+    if not _is_safe_next_path(next_path):
+        next_path = url_for("index")
+
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        if not username or not password:
+            error = "Username and password are required."
+        elif len(username) < 3:
+            error = "Username must be at least 3 characters."
+        elif len(password) < 4:
+            error = "Password must be at least 4 characters."
+        elif password != confirm_password:
+            error = "Passwords do not match."
+        else:
+            db = get_db()
+            user = None
+            try:
+                db.execute(
+                    "INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
+                    (username, password, "user")
+                )
+                db.commit()
+                user = db.execute(
+                    "SELECT id, username, role FROM users WHERE username = ?",
+                    (username,)
+                ).fetchone()
+            except sqlite3.IntegrityError:
+                error = "Username already exists."
+            finally:
+                db.close()
+
+            if user:
+                session["user_id"] = user["id"]
+                session["user_username"] = user["username"]
+                session["user_role"] = user["role"]
+                return redirect(next_path)
+
+    return render_template("user_register.html", error=error, next_path=next_path)
 
 @app.route("/user/logout")
 def user_logout():
@@ -138,6 +251,57 @@ def user_profile():
 
     return render_template("user_profile.html", user=user, bookmark_count=bookmark_count)
 
+@app.route("/user/bookmarks")
+@require_user_login
+def user_bookmarks():
+    user_id = session.get("user_id")
+    db = get_db()
+    series = db.execute("""
+        SELECT DISTINCT s.id, s.title, s.slug, s.genre, s.description, s.cover_path
+        FROM bookmarks AS b
+        INNER JOIN series AS s ON s.id = b.series_id
+        WHERE b.user_id = ?
+        ORDER BY s.title
+    """, (user_id,)).fetchall()
+    db.close()
+    return render_template("user_bookmarks.html", series=series)
+
+@app.route("/bookmark/<slug>", methods=["POST"])
+@require_user_login
+def toggle_bookmark(slug):
+    next_path = request.form.get("next") or request.args.get("next") or url_for("index")
+    if not _is_safe_next_path(next_path):
+        next_path = url_for("index")
+
+    user_id = session.get("user_id")
+    db = get_db()
+    series = db.execute(
+        "SELECT id FROM series WHERE slug = ?",
+        (slug,)
+    ).fetchone()
+    if not series:
+        db.close()
+        abort(404)
+
+    existing = db.execute(
+        "SELECT 1 FROM bookmarks WHERE user_id = ? AND series_id = ? LIMIT 1",
+        (user_id, series["id"])
+    ).fetchone()
+
+    if existing:
+        db.execute(
+            "DELETE FROM bookmarks WHERE user_id = ? AND series_id = ?",
+            (user_id, series["id"])
+        )
+    else:
+        db.execute(
+            "INSERT INTO bookmarks (user_id, series_id, last_chapter) VALUES (?, ?, ?)",
+            (user_id, series["id"], None)
+        )
+    db.commit()
+    db.close()
+    return redirect(next_path)
+
 @app.route("/admin/access", methods=["GET", "POST"])
 def admin_access():
     error = None
@@ -158,6 +322,13 @@ def admin_access():
 def admin_logout():
     session.pop("is_admin", None)
     return redirect(url_for("index"))
+
+@app.route("/icons/<path:filename>")
+def icon_asset(filename):
+    _, ext = os.path.splitext(filename)
+    if ext.lower() != ".svg":
+        abort(404)
+    return send_from_directory(ICON_FOLDER, filename)
 
 @app.route("/admin")
 @require_admin_key
@@ -344,7 +515,7 @@ def upload_chapter(slug):
             img for img in request.files.getlist("images[]")
             if img and img.filename
         ]
-        images.sort(key=lambda img: _natural_sort_key(img.filename))
+        images.sort(key=lambda img: _natural_sort_key(os.path.basename(img.filename)))
 
         if not images:
             db.close()
